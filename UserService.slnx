@@ -2,5 +2,7 @@
   <Project Path="docker-compose.dcproj">
     <Build />
   </Project>
-  <Project Path="IdentityService/UserService.API.csproj" />
+  <Project Path="UserService.Application/UserService.Application.csproj" Id="d4345ee4-d989-428b-85f4-b18109eb15c4" />
+  <Project Path="UserService.Core/UserService.Core.csproj" Id="e5c0d15c-ec9b-45b0-b6ac-ec384132ed6b" />
+  <Project Path="UserService/UserService.API.csproj" />
 </Solution>

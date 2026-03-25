@@ -12,19 +12,19 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["IdentityService/IdentityService.API.csproj", "IdentityService/"]
-RUN dotnet restore "./IdentityService/IdentityService.API.csproj"
+COPY ["UserService/UserService.API.csproj", "UserService/"]
+RUN dotnet restore "./UserService/UserService.API.csproj"
 COPY . .
-WORKDIR "/src/IdentityService"
-RUN dotnet build "./IdentityService.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/UserService"
+RUN dotnet build "./UserService.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./IdentityService.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./UserService.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "IdentityService.API.dll"]
+ENTRYPOINT ["dotnet", "UserService.API.dll"]

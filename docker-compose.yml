@@ -1,9 +1,9 @@
 services:
-  identityservice.api:
-    image: ${DOCKER_REGISTRY-}identityservice
+  userservice.api:
+    image: ${DOCKER_REGISTRY-}userservice
     build:
       context: .
-      dockerfile: IdentityService/Dockerfile
+      dockerfile: UserService/Dockerfile
     networks:
       - forum_network
 
@@ -134,7 +134,7 @@ services:
     networks:
       - forum_network
     depends_on:
-      - identityservice.api
+      - userservice.api
       - postservice
 
 networks:
