@@ -1,0 +1,148 @@
+services:
+  identityservice.api:
+    image: ${DOCKER_REGISTRY-}identityservice
+    build:
+      context: .
+      dockerfile: IdentityService/Dockerfile
+    networks:
+      - forum_network
+
+  postservice:
+    image: ${DOCKER_REGISTRY-}postserviceapi
+    build:
+      context: ../PostService  # Уточните правильный путь
+      dockerfile: PostService/Dockerfile
+    # ports:
+    #   - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5001
+      - RabbitMq__Host=rabbitmq://rabbitmq:5672
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - ConnectionStrings__PostServiceDbContext=Host=postgrespost;Port=5432;Database=PostServiceDB;User ID=postgres;Password=admin
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgrespost:
+        condition: service_started
+    networks:
+      - forum_network
+    restart: on-failure
+
+  postgrespost:
+    container_name: post-db
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: "PostServiceDB"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "admin"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+   # ports:
+   #   - "5433:5432"
+    networks:
+      - forum_network
+
+  threadservice:
+    image: ${DOCKER_REGISTRY-}threadserviceapi
+    build:
+      context: ../ThreadService  # Уточните правильный путь
+      dockerfile: ThreadService/Dockerfile
+   # ports:
+    #  - "5005:5005"  # Добавьте порт для доступа к API
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5005
+      - RabbitMq__Host=rabbitmq://rabbitmq:5672
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - ConnectionStrings__ThreadServiceDbContext=Host=postgresthread;Port=5432;Database=ThreadServiceDB;User ID=postgres;Password=admin
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresthread:
+        condition: service_started
+    networks:
+      - forum_network
+    restart: on-failure
+
+  postgresthread:
+    container_name: thread-db
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: "ThreadServiceDB"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "admin"
+    volumes:
+      - postgresthread-data:/var/lib/postgresql
+    #ports:
+    #  - "5434:5432"
+    networks:
+      - forum_network
+    restart: on-failure
+
+
+  rabbitmq:
+    image: rabbitmq:management  # или rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      #- "15672:15672"  # Веб-интерфейс
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - forum_network
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: true
+    volumes:
+      - ./containers/identity:/opt/keycloak/data
+    ports:
+      - "8080:8080"
+      - "9000:9000"
+    user: root
+    networks:
+      - forum_network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8000:9999"
+      #- "8071:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+    networks:
+      - forum_network
+    depends_on:
+      - identityservice.api
+      - postservice
+
+networks:
+  forum_network:
+    name: forum_network1
+    driver: bridge
+
+volumes:
+  postgres-data:
+  postgresthread-data:
+  rabbitmq-data:

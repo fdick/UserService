@@ -1,0 +1,9 @@
+
+
+apt-get update
+apt-get install -y net-tools
+netstat -tulpn
+
+
+
+netstat -tulpn | grep LISTEN
