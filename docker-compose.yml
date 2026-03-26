@@ -90,7 +90,7 @@ services:
     container_name: rabbitmq
     ports:
       - "5672:5672"
-      #- "15672:15672"  # Веб-интерфейс
+      - "15672:15672"  # Веб-интерфейс
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -113,14 +113,23 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HEALTH_ENABLED: true
+      KK_TO_RMQ_URL: rabbitmq          # Хост RabbitMQ
+      KK_TO_RMQ_PORT: 5672             # Порт AMQP
+      KK_TO_RMQ_VHOST: /               # Virtual host
+      KK_TO_RMQ_EXCHANGE: amq.topic    # Обменник
+      KK_TO_RMQ_USERNAME: guest        # Логин
+      KK_TO_RMQ_PASSWORD: guest        # Пароль
     volumes:
       - ./containers/identity:/opt/keycloak/data
+      - ./plugins/keycloak-to-rabbit-3.0.5.jar:/opt/keycloak/providers/keycloak-to-rabbit-3.0.5.jar
     ports:
       - "8080:8080"
       - "9000:9000"
     user: root
     networks:
       - forum_network
+    depends_on:
+      - rabbitmq
 
   nginx:
     image: nginx:latest
